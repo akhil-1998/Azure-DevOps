@@ -1,0 +1,42 @@
+trigger: 
+  - 'none'
+
+pool:
+  name: {agent_pool}
+  demands:
+  - agent.name -equals {agent_name} 
+
+resources:
+  repositories:
+  - repository: {Repo name}
+    type: git
+    name: {Project_name}/{reponame}
+
+stages:
+- stage: BranchPolicyBuildValidation
+  displayName: "Branch Policy Build Validation"
+  jobs:
+  - job: source_branch_validation
+    displayName: Source Branch Validation
+    steps: 
+    - task: PowerShell@2
+      inputs:
+        targetType: 'inline'
+        script: |
+          if ('$(System.PullRequest.SourceBranch)' -ieq 'refs/heads/dev' -and '$(System.PullRequest.TargetBranch)' -ieq 'refs/heads/integration') {
+            Write-Host 'PR sourcebranch: $(System.PullRequest.SourceBranch)'
+            Write-Host 'PR TargetBranch: $(System.PullRequest.TargetBranch)'
+            Write-Host '$(System.PullRequest.SourceBranch)' "is allowed." 
+          } elseif ('$(System.PullRequest.SourceBranch)' -ieq 'refs/heads/integration' -and '$(System.PullRequest.TargetBranch)' -ieq 'refs/heads/sit') {
+            Write-Host 'PR sourcebranch: $(System.PullRequest.SourceBranch)'
+            Write-Host 'PR TargetBranch: $(System.PullRequest.TargetBranch)'
+            Write-Host '$(System.PullRequest.SourceBranch)' "is allowed." 
+          } elseif ('$(System.PullRequest.SourceBranch)' -ieq 'refs/heads/sit' -and '$(System.PullRequest.TargetBranch)' -ieq 'refs/heads/main') {
+            Write-Host 'PR sourcebranch: $(System.PullRequest.SourceBranch)'
+            Write-Host 'PR TargetBranch: $(System.PullRequest.TargetBranch)'
+            Write-Host '$(System.PullRequest.SourceBranch)' "is allowed." 
+          } else {
+            Throw "Source branch '$(System.PullRequest.SourceBranch)' is not allowed to merge in '$(System.PullRequest.TargetBranch)'."
+            exit 1
+          }           
+      displayName: "Check Build Source Branch"            

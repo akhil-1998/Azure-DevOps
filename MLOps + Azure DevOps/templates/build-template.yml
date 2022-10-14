@@ -1,0 +1,88 @@
+jobs:
+- job: build
+  steps:
+  - task: UsePythonVersion@0
+    displayName: 'Use Python 3.6'
+    inputs:
+        versionSpec: 3.6
+
+  - task: Bash@3
+    displayName: 'Bash Script'
+    inputs:
+        targetType: filePath
+        filePath: './setup/install_requirements.sh'
+
+  - task: AzureCLI@2
+    displayName: 'Azure CLI ML Installation'
+    inputs:
+        azureSubscription: POCLabServiceConnection
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: 'az extension add -n azure-cli-ml'
+
+  - task: AzureCLI@2
+    displayName: 'Azure CLI Use ML Workspace'
+    inputs:
+        azureSubscription: POCLabServiceConnection
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+            az ml workspace create -g $(ml.resourceGroup) -w $(ml.workspace) -l $(ml.region) --exist-ok --yes
+
+  - task: AzureCLI@2
+    displayName: 'Azure CLI Create Compute'
+    inputs:
+        azureSubscription: POCLabServiceConnection
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+            az ml computetarget create amlcompute -g $(ml.resourceGroup) -w $(ml.workspace) -n $(ml.computeName) -s $(ml.computeVMSize) --min-nodes $(ml.computeMinNodes) --max-nodes $(ml.computeMaxNodes) --idle-seconds-before-scaledown $(ml.computeIdleSecs)
+
+  - task: AzureCLI@2
+    displayName: 'Azure CLI Upload data to blob'
+    inputs:
+        azureSubscription: POCLabServiceConnection
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+            az ml datastore upload -w $(ml.workspace) -g $(ml.resourceGroup) -n $(az ml datastore show-default -w $(ml.workspace) -g $(ml.resourceGroup) --query name -o tsv) -p data -u diabetes --overwrite true
+
+  - bash: |
+        mkdir metadata && mkdir models
+    displayName: 'Create MetaData & Model folders'
+
+  - task: AzureCLI@2
+    displayName: 'Model Training'
+    inputs:
+        azureSubscription: POCLabServiceConnection
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+            az ml run submit-script -g $(ml.resourceGroup) -w $(ml.workspace) -e $(ml.experimentName) --ct $(ml.computeName) --path training -d conda_dependencies.yml -c train_diabetes -t ../metadata/run.json train_diabetes.py
+
+  - task: AzureCLI@2
+    displayName: 'Register Model'
+    inputs:
+        azureSubscription: POCLabServiceConnection
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+            az ml model register -g $(ml.resourceGroup) -w $(ml.workspace) -n $(model.name) -f ../metadata/run.json --asset-path outputs/models/sklearn_diabetes_model.pkl -d "Linear model using diabetes dataset" --tag "data"="diabetes" --tag "model"="regression" --model-framework ScikitLearn -t metadata/model.json
+
+  - task: CopyFiles@2
+    displayName: 'Copy Files to: $(Build.ArtifactStagingDirectory)'
+    inputs:
+        # SourceFolder: '$(Build.SourcesDirectory)'
+        Contents: |
+          **/metadata/*
+          **/models/*
+          **/deployment/*
+          **/setup/*
+          **/tests/integration/*
+        TargetFolder: '$(Build.ArtifactStagingDirectory)'
+
+  - task: PublishBuildArtifacts@1
+    displayName: 'Publish Build Artifact'
+    inputs:
+        pathToPublish: '$(Build.ArtifactStagingDirectory)' 
+        artifact: 'drop'

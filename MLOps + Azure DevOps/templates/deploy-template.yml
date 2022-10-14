@@ -1,0 +1,61 @@
+jobs:
+- deployment: DeployMLOps
+  displayName: "Deploying to ACI"
+  environment: "MLOpsEnv"
+
+- job: deploy
+  dependsOn: DeployMLOps
+  steps:
+  - task: DownloadBuildArtifacts@0
+    inputs:
+      buildType: 'current'
+      downloadType: 'single'
+      artifactName: 'drop'
+      downloadPath: '$(Build.ArtifactStagingDirectory)'
+    displayName: 'Download Build Artifacts'
+
+  - task: UsePythonVersion@0
+    displayName: 'Use Python 3.6'
+    inputs:
+      versionSpec: 3.6
+
+  - task: Bash@3
+    displayName: 'Bash Script'
+    inputs:
+      targetType: filePath
+      filePath: '$(Build.ArtifactStagingDirectory)/drop/setup/install_requirements.sh'
+
+  - task: AzureCLI@2
+    displayName: 'Azure CLI ML Installation'
+    inputs:
+      azureSubscription: POCLabServiceConnection
+      scriptType: bash
+      scriptLocation: inlineScript
+      inlineScript: 'az extension add -n azure-cli-ml'
+
+  - task: AzureCLI@2
+    displayName: 'Deploy to ACI'
+    inputs:
+      azureSubscription: POCLabServiceConnection
+      scriptType: bash
+      scriptLocation: inlineScript
+      inlineScript: 'az ml model deploy -g $(ml.resourceGroup) -w $(ml.workspace) -n $(service_name) -f ../metadata/model.json --dc aciDeploymentConfig.yml --ic inferenceConfig.yml --description "MLOps Model deployed in ACI" --overwrite'
+      workingDirectory: '$(Build.ArtifactStagingDirectory)/drop/deployment'
+
+  - task: AzureCLI@2
+    displayName: 'Run Test'
+    inputs:
+      azureSubscription: POCLabServiceConnection
+      scriptType: bash
+      scriptLocation: inlineScript
+      inlineScript: |
+        python3 -m pytest tests/integration/integration_test.py --doctest-modules --junitxml=junit/test-results.xml --cov=integration_test --cov-report=xml --cov-report=html --scoreurl $(az ml service show -g $(ml.resourceGroup) -w $(ml.workspace) -n $(service_name) --query scoringUri -o tsv)
+      # workingDirectory: '$(System.DefaultWorkingDirectory)/_MLOps/drop/tests/integration'
+
+
+  - task: PublishTestResults@2
+    displayName: 'Publish Test Results'
+    inputs:
+      testResultsFiles: '**/test-*.xml'
+      testRunTitle: 'Integration Test'
+

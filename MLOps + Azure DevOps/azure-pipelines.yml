@@ -11,8 +11,8 @@ resources:
   repositories:
   - repository: MLOps
     type: git
-    name: WalgreensMigration/MLOps
-    ref: feature
+    name: AzureDevOps/MLOps
+    ref: master
 
 stages:
 - stage: Build

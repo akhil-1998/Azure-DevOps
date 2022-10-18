@@ -1,0 +1,28 @@
+trigger:
+  - none
+
+variables:
+- group: Secrets
+
+jobs:
+  - job: ReposList
+    displayName: "Repos List"
+    pool:
+          VmImage: ubuntu-latest
+    steps:
+      - bash: |
+                pip install azure-devops
+                pip install pandas
+        displayName: "Install python packages using pip"
+
+      - script: |
+            python3 $(Build.SourcesDirectory)/Repos-List/repos.py $(Pipeline.Workspace)/repo-details.csv $(PAT)
+        displayName: 'Calling pipeline through Python3'
+        condition: always()
+
+      - task: PublishPipelineArtifact@1
+        displayName: "Publish results in the Pipeline Artifact"
+        inputs:
+          targetPath: "$(Pipeline.Workspace)/repo-details.csv"
+          artifact: "repos"
+          publishLocation: "pipeline"

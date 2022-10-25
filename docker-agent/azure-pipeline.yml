@@ -1,0 +1,16 @@
+trigger:
+- none
+pool:
+  name: dockerpool
+  demands: 
+  - agent.name -equals dockeragent
+
+steps:
+- script: echo Hello, world!
+  displayName: 'Run a one-line script'
+
+- script: az version
+  displayName: 'Az Cli'
+
+- script: dotnet --version
+  displayName: 'Dotnet'

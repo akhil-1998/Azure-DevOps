@@ -1,0 +1,21 @@
+trigger:
+- none
+
+pool:
+  name: vmsspool
+
+
+steps:
+- script: echo Hello, world!
+  displayName: 'Run a one-line script'
+
+- script: |
+    python3 --version
+  displayName: 'validation of Python Software'
+  condition: always()
+      
+- script: |
+    node --version
+  displayName: 'validation of Node Software'
+  condition: always()
+

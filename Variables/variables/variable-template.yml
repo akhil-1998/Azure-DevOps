@@ -1,0 +1,3 @@
+variables:
+- name: VGTemplate
+  value: "This value is from varible template"

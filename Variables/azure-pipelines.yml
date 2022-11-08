@@ -1,0 +1,23 @@
+trigger:
+  - none
+
+variables:
+- group: VG-Test
+- template: variables/variable-template.yml
+
+jobs:
+  - job: JOB1
+    displayName: "Variable-Defining"
+    pool:
+          VmImage: ubuntu-latest
+    steps:
+
+      - script: |
+            echo $VG
+        displayName: 'Invoking from variable group'
+        condition: always()
+
+      - script: |
+            echo ${{ variables.VGTemplate }}
+        displayName: 'Invoking from variable template'
+        condition: always()

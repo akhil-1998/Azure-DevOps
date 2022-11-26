@@ -1,0 +1,22 @@
+trigger:
+  - none
+
+jobs:
+  - job: Pipeline
+    displayName: "Pipeline details"
+    pool:
+          VmImage: ubuntu-latest
+    steps:
+      - checkout: self
+
+      - bash: |
+                pip install azure-devops
+        displayName: "Install python packages using pip"
+
+      - script: |
+            python3 $(Build.SourcesDirectory)/pipeline.py
+        displayName: 'Execute Python Script'
+        condition: always()
+        env:
+          SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+          

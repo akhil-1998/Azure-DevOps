@@ -1,0 +1,27 @@
+trigger:
+  - none
+
+jobs:
+  - job: ReposList
+    displayName: "Repos List Using System Access Token"
+    pool:
+          VmImage: ubuntu-latest
+    steps:
+      - bash: |
+                pip install azure-devops
+                pip install pandas
+        displayName: "Install python packages using pip"
+
+      - script: |
+            python3 $(Build.SourcesDirectory)/Repos-List/repos.py $(Pipeline.Workspace)/repo-details.csv
+        displayName: 'Calling pipeline through Python3'
+        condition: always()
+        env:
+          SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+
+      - task: PublishPipelineArtifact@1
+        displayName: "Publish results in the Pipeline Artifact"
+        inputs:
+          targetPath: "$(Pipeline.Workspace)/repo-details.csv"
+          artifact: "repos"
+          publishLocation: "pipeline"

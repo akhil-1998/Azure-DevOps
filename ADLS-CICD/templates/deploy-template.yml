@@ -19,6 +19,4 @@ jobs:
         scriptType: bash
         scriptLocation: inlineScript
         inlineScript: |
-                az storage blob upload-batch -d https://adlsdatamov.blob.core.windows.net/${{ parameters.container }} --account-name ${{ parameters.storageacc }} -s "$(Build.ArtifactStagingDirectory)/ADLS_artifact/ADLS" --overwrite --auth-mode key
-        env:
-          AZURE_STORAGE_AUTH_MODE
+                az storage blob upload-batch -d {adlscontainerurl} --account-name ${{ parameters.storageacc }} -s "$(Build.ArtifactStagingDirectory)/ADLS_artifact/ADLS" --overwrite --account-key {accountkey_of_adls}

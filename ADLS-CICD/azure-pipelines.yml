@@ -9,7 +9,7 @@ variables:
 - name: containername
   value: datafiles
 
-trigger: none
+trigger: main
 
 stages:
 - stage: Build

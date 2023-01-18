@@ -1,7 +1,7 @@
 jobs:
 - job: build
   steps:
-  - checkout: git://Akhil-Testing/ADLS@main
+  - checkout: git://{project_name}/ADLS@{branch}
 
   - task: CopyFiles@2
     inputs:

@@ -1,0 +1,27 @@
+#ADLS Datamovement CI/CD
+
+pool:
+    vmImage: ubuntu-latest
+
+variables:
+- name: storageaccountname
+  value: adlsdatamov
+- name: containername
+  value: datafiles
+
+trigger: none
+
+stages:
+- stage: Build
+  displayName: "Build-Stage"
+  jobs:
+  - template: templates/build-template.yml
+
+- stage: Deploy
+  displayName: "Deploy Stage"
+  dependsOn: Build
+  jobs:
+  - template: templates/deploy-template.yml
+    parameters:
+      storageacc: $(storageaccountname)
+      container: $(containername) 

@@ -1,0 +1,14 @@
+jobs:
+- job: build
+  steps:
+  - checkout: git://Akhil-Testing/ADLS@main
+
+  - task: CopyFiles@2
+    inputs:
+        contents: 'ADLS/Data/**'
+        targetFolder: $(Build.ArtifactStagingDirectory)
+
+  - task: PublishBuildArtifacts@1
+    inputs:
+        pathToPublish: $(Build.ArtifactStagingDirectory)
+        artifactName: ADLS_artifact

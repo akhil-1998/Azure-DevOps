@@ -1,0 +1,24 @@
+parameters:
+- name: container
+- name: storageacc
+
+jobs:
+  - job: deploy
+    steps:
+    - task: DownloadBuildArtifacts@0
+      inputs:
+        buildType: 'current'
+        downloadType: 'single'
+        artifactName: 'ADLS_artifact'
+        downloadPath: '$(Build.ArtifactStagingDirectory)'
+      displayName: 'Download Build Artifacts'
+
+    - task: AzureCLI@2
+      inputs:
+        azureSubscription: 'POC Lab'
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+                az storage blob upload-batch -d https://adlsdatamov.blob.core.windows.net/${{ parameters.container }} --account-name ${{ parameters.storageacc }} -s "$(Build.ArtifactStagingDirectory)/ADLS_artifact/ADLS" --overwrite --auth-mode key
+        env:
+          AZURE_STORAGE_AUTH_MODE

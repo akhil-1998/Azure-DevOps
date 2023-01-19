@@ -9,7 +9,8 @@ variables:
 - name: containername
   value: 
 
-trigger: main
+trigger: 
+- main
 
 stages:
 - stage: Build

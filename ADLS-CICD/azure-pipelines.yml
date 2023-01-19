@@ -5,9 +5,9 @@ pool:
 
 variables:
 - name: storageaccountname
-  value: adlsdatamov
+  value: 
 - name: containername
-  value: datafiles
+  value: 
 
 trigger: main
 
